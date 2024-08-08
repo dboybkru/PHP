@@ -3,6 +3,12 @@ session_start();
 ob_start(); 
 
 $pdo = new PDO('mysql:host=localhost;dbname=test_db', 'root', '');
+/*  - **`session_start();`**: Запускает сессию, как и в `index.php`.
+    - ob_start();  - Буферизует вывод, чтобы можно было изменить или отменить его до отправки клиенту. Капча без этого не захотела работать.
+    - **`$pdo = new PDO(...)`**: Создается объект PDO для подключения к базе данных.
+    (Объект PDO (PHP Data Objects) — это облегченное средство доступа к базам данных, ... далее то же что и в index.php
+    Капча сделана на основе сервиса Яндекс.Капча. (код из документации Яндекс.Капчи, сильно не разбирался, пока сложно)
+*/
 
 define('SMARTCAPTCHA_SERVER_KEY', 'ysc2_py1MHYLoBY1TQFWoEUUzIHR6R4UC7uFvjrQxeRcO26046078');
 
@@ -31,25 +37,25 @@ function check_captcha($token) {
     return isset($resp->status) && $resp->status === "ok"; 
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $phone_or_email = $_POST['phone_or_email'];
-    $password = $_POST['password'];
-    $captcha_token = $_POST['smart-token']; 
+if ($_SERVER['REQUEST_METHOD'] == 'POST') { // Проверяем, была ли отправлена форма методом POST
+    $phone_or_email = $_POST['phone_or_email']; // Получаем телефон или email пользователя из формы
+    $password = $_POST['password']; // Получаем пароль пользователя из формы
+    $captcha_token = $_POST['smart-token']; // Получаем токен капчи из формы
 
-    if (check_captcha($captcha_token)) {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE phone = ? OR email = ?");
-        $stmt->execute([$phone_or_email, $phone_or_email]);
-        $user = $stmt->fetch();
+    if (check_captcha($captcha_token)) { // Проверяем капчу
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE phone = ? OR email = ?"); // Подготавливаем SQL запрос для выборки пользователя по телефону или email
+        $stmt->execute([$phone_or_email, $phone_or_email]); // Выполняем подготовленный запрос
+        $user = $stmt->fetch(); // Получаем результат запроса
         
-        if ($user && $user['password'] == $password) {
-            $_SESSION['user_id'] = $user['id'];
-            header("Location: profile.php");
+        if ($user && $user['password'] == $password) { // Проверяем, существует ли пользователь и совпадает ли пароль
+            $_SESSION['user_id'] = $user['id']; // Сохраняем ID пользователя в сессию
+            header("Location: profile.php"); // Перенаправляем на страницу профиля пользователя
             exit;
         } else {
-            echo "Неверный телефон/почта или пароль.";
+            echo "Неверный телефон/почта или пароль."; // Выводим сообщение об ошибке, если данные неверны
         }
     } else {
-        echo "Невозможно пройти валидацию капчи.";
+        echo "Невозможно пройти валидацию капчи."; // Выводим сообщение об ошибке, если капча не прошла проверку
     }
 }
 ?>
