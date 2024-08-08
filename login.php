@@ -2,15 +2,23 @@
 session_start();
 ob_start(); 
 
-$pdo = new PDO('mysql:host=localhost;dbname=test_db', 'root', '');
+require 'vendor/autoload.php'; // Подключаем автозагрузчик Composer, для сокрытия ключей капчи
+
+// Загружаем переменные из .env файла
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+$pdo = new PDO('mysql:host=localhost;dbname=test_db', 'root', ''); // Укажите свои значения для подключения к БД
+
 /*  - **`session_start();`**: Запускает сессию, как и в `index.php`.
     - ob_start();  - Буферизует вывод, чтобы можно было изменить или отменить его до отправки клиенту. Капча без этого не захотела работать.
     - **`$pdo = new PDO(...)`**: Создается объект PDO для подключения к базе данных.
-    (Объект PDO (PHP Data Objects) — это облегченное средство доступа к базам данных, ... далее то же что и в index.php
+    (Объект PDO (PHP Data Objects) — это облегчённое средство доступа к базам данных, ... далее то же что и в index.php
     Капча сделана на основе сервиса Яндекс.Капча. (код из документации Яндекс.Капчи, сильно не разбирался, пока сложно)
 */
 
-define('SMARTCAPTCHA_SERVER_KEY', 'ysc2_py1MHYLoBY1TQFWoEUUzIHR6R4UC7uFvjrQxeRcO26046078');
+// Замените на использование переменной окружения для SERVER_KEY
+define('SMARTCAPTCHA_SERVER_KEY', $_ENV['SMARTCAPTCHA_SERVER_KEY']);
 
 function check_captcha($token) {
     $ch = curl_init();
@@ -97,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') { // Проверяем, была ли
     }
 
     window.smartCaptcha.render('captcha-container', {
-      sitekey: 'ysc1_py1MHYLoBY1TQFWoEUUzQufHUqYDbmZZgGBcrpfm2b97fd48', // Клиентский ключ
+      sitekey: '<?php echo $_ENV['SMARTCAPTCHA_SITE_KEY']; ?>', // Клиентский ключ, загружается из .env
       callback: callback,
     });
   }
